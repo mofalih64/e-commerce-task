@@ -16,6 +16,7 @@ passport.use(
       passwordField: 'password',
       passReqToCallback: true,
     },
+
     async (req, phoneNumber, password, done) => {
       try {
         password = await bcrypt.hash(password, 12);

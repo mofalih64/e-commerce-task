@@ -8,38 +8,56 @@ datasource db {
 }
 
 model User {
-  id String @id @default(uuid())
-
+  id          String  @id @default(uuid())
   firstName   String?
   lastName    String?
   password    String
   phoneNumber String  @unique
   carts       Cart[]
 
+  Item Item[]
   @@map("users")
 }
 
 model Product {
   id     String  @id @default(uuid())
-  nameAr String  @map("name_ar")
+  nameAr String? @map("name_ar")
   nameEn String  @map("name_en")
-  nameKu String  @map("name_ku")
+  nameKu String? @map("name_ku")
   price  Decimal
-  unit   String
-  image  String
+  unit   String?
+  image  String?
 
   images    String[]
-  lotNumber String
-  slug      String
+  lotNumber String?
+  slug      String?
+  Item      Item[]
 
   @@map("products")
 }
 
-model Cart {
-  id              String   @id @default(uuid())
-  is_authenticaed Boolean?
-  user            User     @relation(fields: [user_id], references: [id])
-  user_id         String
+model Item {
+  id        String  @id @default(uuid())
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String  @map("user_id")
+  quantity  Int
+  ordered   Boolean
+  product   Product @relation(fields: [productId], references: [id])
+  productId String  @map("product_id")
 
-  //   @@map("products")
+
+  Cart    Cart   @relation(fields: [cart_id], references: [id])
+  cart_id String
+  @@map("items")
+}
+
+model Cart {
+  id      String  @id @default(uuid())
+  // is_authenticaed Boolean?
+  user    User    @relation(fields: [userId], references: [id])
+  userId  String  @map("user_id")
+  items   Item[]
+  ordered Boolean
+
+  @@map("carts")
 }

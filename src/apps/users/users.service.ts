@@ -2,6 +2,7 @@ import { Prisma, User } from '.prisma/client';
 import { prisma } from '../../prisma/prisma.service';
 
 export const reshape = (users: User[]) => {
+  // exclude password field
   return users.map(({ password, ...safe }) => safe);
 };
 
@@ -24,7 +25,13 @@ export const findUniqueUnsafe = async (args: Prisma.UserFindUniqueArgs) => {
 };
 
 export const create = async (args: Prisma.UserCreateArgs) => {
-  const user = await prisma.user.create(args);
+  // console.log(JSON.stringify(args))
+
+  console.log(`${JSON.stringify(args)}}__________`)
+  // console.log(args.password)
+
+  let user = await prisma.user.create(args);
+
   const [reshapedUser] = reshape([user]);
   return reshapedUser;
 };

@@ -4,4 +4,7 @@ const router = Router();
 
 router.get('/', usersController.getAllUsers);
 
+// router.get('create', usersController.createuser);
+
+
 export { router as userRouter };

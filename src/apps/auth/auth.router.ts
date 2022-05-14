@@ -1,17 +1,18 @@
 import { Router } from 'express';
 import passport from 'passport';
 import * as authController from './auth.contoller';
-const router = Router();
+import * as usersController from '../users/users.controller';
 
+const router = Router();
+// crate user then give him a token 
 router.post(
   '/login',
-  passport.authenticate('login', { session: false }),
   authController.login
 );
 
 router.post(
-  '/signup',
-  passport.authenticate('signup', { session: false }),
+  '/signup', usersController.createuser,
   authController.signup
 );
 export { router as authRouter };
+

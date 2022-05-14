@@ -1,13 +1,13 @@
-import { ErrorRequestHandler, Request, Response, NextFunction } from 'express';
+import { ErrorRequestHandler, } from 'express';
 import { Prisma } from '@prisma/client';
 import { prismaErrorHandler } from './prismaErrorHandler';
 import { BadRequestException } from './commonError';
 
-export const errorHandler = async (
-  error: ErrorRequestHandler,
-  req: Request,
-  res: Response,
-  next: NextFunction
+export const errorHandler: ErrorRequestHandler = async (
+  error,
+  req,
+  res,
+  next
 ) => {
   console.error(error);
 
