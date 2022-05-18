@@ -3,6 +3,7 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import * as userService from '../../users/users.service';
 import bcrypt from 'bcryptjs';
 import { BadRequestException } from '../../../utils/errorHandler/commonError';
+import { authorize } from 'passport';
 
 const isValidPassword = async (password: string, hashedPassword: string) => {
   return await bcrypt.compare(password, hashedPassword);
@@ -21,7 +22,10 @@ passport.use(
       try {
         password = await bcrypt.hash(password, 12);
         const user = await userService.create({
-          data: { phoneNumber, password },
+          data: {
+             phoneNumber,
+              password ,
+              authorized:true},
         });
         return done(null, user);
       } catch (err) {

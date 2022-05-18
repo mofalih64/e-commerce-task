@@ -1,176 +1,154 @@
-import { PrismaClient } from "@prisma/client"
-const prisma = new PrismaClient()
-import type { Handler } from 'express';
-// import { createsession } from '../../utils/utils'
-// var genuuid = require('uuid/v4');
+import { Prisma, PrismaClient, User } from '@prisma/client';
+const prisma = new PrismaClient();
+import type { Response, Request } from 'express';
+import { authorize } from '../auth/auth.contoller';
+import { getToken } from '../auth/auth.service';
 
+export const getCart = async (req: Request, res: Response) => {
+  const user = req.user as User;
+  console.log(user);
 
-// const express = require('express')
-// const {}= prisma
-// const {item,cart}=new prisma()
+  try {
+    let userCart = await prisma.item.findMany({
+      where: {
+        ordered: false,
+        userId: user.id,
+      },
+    });
 
-export const createCart: Handler = async (
-    req,
-    res
-) => {
+    if (userCart.length == 0) {
+      res.status(200).json({
+        message: 'there is no items in your cart',
+      });
+    } else {
+      res.status(200).json({
+        data: userCart,
+      });
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(error.message);
+    }
+  }
+};
 
-    try {
+export const createCart = async (req: Request, res: Response) => {
+  try {
+    const user = (await req.user) as User;
 
+    const un_ordred_items = await prisma.item.findMany({
+      where: {
+        userId: user.id,
+        ordered: false,
+      },
+    });
 
-        const un_ordred_items = await prisma.item.findMany({
+    if (
+      un_ordred_items.length == 0 ||
+      !un_ordred_items.includes(req.body.productId)
+      //if the product is already in the cart , we should just to increase the quantity of it
+    ) {
+      await prisma.item.create({
+        data: {
+          productId: req.body.productId,
+          userId: user.id,
+          quantity: 1,
+          ordered: false,
+        },
+      });
+    } else {
+      for (let i = 0; i < un_ordred_items.length; i++) {
+        // in real world there will be only one cart that has items  ordered=false
+        if (un_ordred_items[i].productId == req.body.producId) {
+          await prisma.item.update({
             where: {
-                userId: req.body.userId,
-                ordered: false
-            }
-        })
-        // console.log(un_ordred_items)
-        if (un_ordred_items) {
-            console.log(`${req.body.peoductId} product iddddd`)
-
-            if (req.body.productId) {
-                let new_cart = await prisma.cart.create({
-                    data: {
-                        userId: req.body.userId,
-                        ordered: false,
-                        items: {
-                            create: {
-                                userId: req.body.userId,
-                                quantity: 1,
-                                ordered: true,
-                                productId: req.body.productId
-
-                            }
-                        }
-
-                    }
-                }
-                )
-
-                console.log(`${new_cart} new cartsssss `)
-            }
-            res.status(201).json({
-                message: "success"
-            })
-
-        }
-    }
-
-    catch (error) {
-        if (error instanceof Error) {
-
-            console.log(error.message)
-        }
-    }
-}
-
-// export const getCarts: Handler = async (
-//     req,
-//     res
-// ) => {
-//     const carts = await prisma.cart.findMany({
-//         include: {
-//             items: true,
-//         },
-//     });
-//     res.json(carts)
-// }
-
-export const addtocart: Handler = async (
-    req,
-    res
-) => {
-    try {
-        const { userId } = req.body
-        let cartObj: any = await prisma.cart.findFirst({
-            where: {
-                userId: userId,
-                ordered: false
+              id: un_ordred_items[i].id,
             },
-            include: {
-                items: true
+            data: {
+              quantity: {
+                increment: 1,
+              },
             },
-        })
-
-        // console.log(JSON.stringify(cartObj))
-
-        console.log(`${cartObj.id} _______________`)
-        if (cartObj.includes(req.body.peoductId)) {
-            // for (let i = 0; i < cartObj.length; i++) {
-            // in real world there will be only one cart that has ordered=false
-            if (cartObj.peoductId == req.body.producId) {
-                cartObj.quantity++
-
-            }
-        }
-        else {
-
-            let newItem = await prisma.item.create({
-                data: {
-                    userId,
-                    quantity: 1,
-                    ordered: true,
-                    productId: req.body.productId,
-                    cart_id: cartObj.id
-                }
-            })
-        }
-        //                     // is there a save method ? 
-        //         let toUpdateCart = await prisma.cart.updateMany({
-        //             where: {
-        //                 userId: userId,
-        //                 ordered:false
-        //             },
-
-        //         data:{
-        //         items:{
-        //             update: [
-
-        //             ]
-        //         }
-
-
-        // })
-        // // req.body.productId
-
-
-
-    } catch (error) {
-        if (error instanceof Error) {
-
-            console.log(error.message)
+          });
         }
 
-
+        break;
+      }
     }
-}
 
+    if (!user.authorized) {
+      let Token = getToken(user).accessToken;
+      return res.status(201).json({
+        Token,
+      });
+    } else {
+      res.status(201).json({
+        message: 'success',
+      });
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(error.message);
+    }
+  }
+};
 
+const itemQuantity = async (id: string, operation: string) => {
+  let itemId = id;
+  if (operation == 'decrement') {
+    await prisma.item.update({
+      where: {
+        id: itemId,
+      },
+      data: {
+        quantity: {
+          decrement: 1,
+        },
+      },
+    });
+  } else if (operation == 'increment') {
+    await prisma.item.update({
+      where: {
+        id: itemId,
+      },
+      data: {
+        quantity: {
+          increment: 1,
+        },
+      },
+    });
+  }
+};
+export const increaseItemQuantity = async (req: Request, res: Response) => {
+  try {
+    // maybe  the client side can  send with the request a flag parameter
+    // to identify if it decrease or increasse but currently the i'm using two methods
+    let itemId = req.params.id;
+    itemQuantity(itemId, 'increment');
 
+    res.status(200).json({
+      data: 'the item incremented succesfully ',
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(error.message);
+    }
+  }
+};
 
+export const decreaseItemQuantity = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as User;
 
-        //                     )
+    let itemId = req.params.id;
+    itemQuantity(itemId, 'decrement');
 
-
-
-        // res.status(201).json({
-        //     meessage: "added succesfuly"
-        // })
-
-
-
-
-
-
-        // }
-        //         }
-        //     }
-        // console.log(JSON.stringify(cartObj.items))
-        // console.log(cartObg)
-
-
-// export const login = async (
-//     req: Request,
-//     res: Response
-// ): Promise<Response<any>> => {
-//     return res.json(authService.reshape(req.user as User));
-// };
+    res.status(200).json({
+      data: 'the item decremented succesfully ',
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(error.message);
+    }
+  }
+};

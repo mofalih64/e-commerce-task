@@ -1,5 +1,7 @@
 import { Prisma, User } from '.prisma/client';
 import { prisma } from '../../prisma/prisma.service';
+// import { checkUser } from './users.controller';
+import { Handler, NextFunction } from 'express';
 
 export const reshape = (users: User[]) => {
   // exclude password field
@@ -15,8 +17,11 @@ export const findMany = async (args?: Prisma.UserFindManyArgs) => {
 // findUniq
 export const findUnique = async (args: Prisma.UserFindUniqueArgs) => {
   const user = await prisma.user.findUnique(args);
+
   const [reshapedUser] = reshape([user as User]);
+
   return reshapedUser;
+  // return user;
 };
 
 export const findUniqueUnsafe = async (args: Prisma.UserFindUniqueArgs) => {
@@ -27,7 +32,7 @@ export const findUniqueUnsafe = async (args: Prisma.UserFindUniqueArgs) => {
 export const create = async (args: Prisma.UserCreateArgs) => {
   // console.log(JSON.stringify(args))
 
-  console.log(`${JSON.stringify(args)}}__________`)
+  // console.log(`${JSON.stringify(args)}}__________`)
   // console.log(args.password)
 
   let user = await prisma.user.create(args);
